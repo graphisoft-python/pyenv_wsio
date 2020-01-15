@@ -17,6 +17,8 @@ __status__ = "Development"
 
 from ._wsio import *
 from ._events import *
+from ._client import *
+from ._packet import *
 
 # if __name__ == "__main__":
 #     raise Exception(

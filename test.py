@@ -2,7 +2,7 @@ import pyenv_wsio
 import time
 
 
-ws=pyenv_wsio.WebSocketIO()
+ws=pyenv_wsio.Client()
 
 
 def onOpened():
@@ -13,20 +13,30 @@ def onClosed():
   cntWs()
 
 def onMessage(data):
-  print "wsMessage",data
+  print "wsMessage"
+  print data.packet_type
+  print data.data
+  print data.namespace
+  print data.id
+  print data.attachments
 
-def onError():
+def onError(e):
   print "wsError"
+  print e
 
 ws.on("open",onOpened)
 ws.on("close",onClosed)
 ws.on("message",onMessage)
 ws.on("error",onError)
+ws.on('packet',onMessage)
 
 def cntWs():
-  ws.connect('ws://localhost:8080/ws-accept',header=["userid:from_python"],timeout=1000)
+  ws.connect('ws://localhost:12000/admin',headers=["userid:from_python"])
+
 
 cntWs() 
+
+print ws.sid
 # emit=pyenv_wsio.EventEmitter()
 
 # def aaaa(arg1,arg2):
@@ -40,7 +50,7 @@ print "wait ws Connect"
 
 time.sleep(20)
 
-ws.close()
+# ws.close()
 
 while(True):
 #   # print ws.recv()
