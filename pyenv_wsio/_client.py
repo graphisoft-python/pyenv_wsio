@@ -3,6 +3,7 @@
 import signal
 from ._events import EventEmitter
 from ._wsio import *
+from . import _packet
 
 reconnecting_clients = []
 
@@ -40,13 +41,9 @@ class Client(EventEmitter):
 
         self.connected = False
         self.namespaces = []
-        self.handlers = {}
-        self.namespace_handlers = {}
-        self.callbacks = {}
         self._binary_packet = None
         self._reconnect_task = None
         self._reconnect_abort = self.eio.create_event()
-
 
     def connect(self,url, headers={},namespaces=None):
       self.connection_url=url
@@ -56,12 +53,15 @@ class Client(EventEmitter):
       self.connected=True
 
     # def emit()
-    
+
     def on_eio_connect(self):
       self.sid=self.eio.sid
 
-    def on_eio_message(self,pkg):
+    def on_eio_message(self,data):
+      pkt = _packet.Packet(encoded_packet=data)
       print 'on_eio_message'
+      print pkt.packet_type
+      print pkt.namespace
 
     def on_eio_disconnect(self):
       print 'on_eio_disconnect'
