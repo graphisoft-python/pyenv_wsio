@@ -30,6 +30,8 @@ def signal_handler(sig, frame):
         # Handle case where no original SIGINT handler was present.
         return signal.default_int_handler(sig, frame)
 
+class ConnectionError(Exception):
+    pass
 
 class Wsio(EventEmitter):
     events = ['connect', 'disconnect', 'message']
@@ -79,7 +81,7 @@ class Wsio(EventEmitter):
         handshake_packet=_packet.Packet(encoded_packet=p)
 
         if handshake_packet.packet_type != _packet.HANDSHAKE:
-            self.emit('error', Exception('no OPEN packet'))
+            self.emit('error', ConnectionError('no OPEN packet'))
 
         self.sid=handshake_packet.data[u'sid']
         self.ping_interval=handshake_packet.data[u'pingInterval']/1000.0
