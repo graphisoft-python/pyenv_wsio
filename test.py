@@ -6,10 +6,13 @@ ws = pyenv_wsio.Client()
 
 
 def namespaceConnect(nsp):
-    print 'namespace', nsp.name
-    nsp.send(123456,'sendString')
+    print 'namespace connect', nsp.name
+    # nsp.send(123456,'sendString')
     # nsp.emit('aaaaaa', {'pop': 0000}, callback=emitAck)
     # nsp.emit('bbbbbb',678967)
+
+def namespaceDisconnect(nsp):
+    print 'namespace disconnect',nsp.name
 
 def emitAck(stri,num,obj):
   print 'emitAck'
@@ -35,8 +38,9 @@ rootNsp= ws.of('/')
 rootNsp.on('connect', namespaceConnect)
 rootNsp.on('cccccc',on_cccccc)
 rootNsp.on('dddddd',on_dddddd)
+rootNsp.on('disconnect',namespaceDisconnect)
 
-ws.of('/admin').on('connect', namespaceConnect)
+ws.of('/admin').on('connect', namespaceConnect).on('disconnect',namespaceDisconnect)
 
 ws.connect('ws://localhost:12000/admin', headers=["userid:from_python"])
 
@@ -57,9 +61,9 @@ print ws.sid
 
 # print "wait ws Connect"
 
-# time.sleep(20)
+time.sleep(5)
 
-# ws.close()
+ws.disconnect()
 
 while(True):
     #   # print ws.recv()

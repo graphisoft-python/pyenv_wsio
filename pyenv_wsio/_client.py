@@ -3,7 +3,6 @@
 import signal
 import random
 
-from ._events import EventEmitter
 from ._wsio import *
 from . import _packet
 from . import _namespace
@@ -25,18 +24,16 @@ def _signal_handler(sig, frame):
 _original_signal_handler = signal.signal(signal.SIGINT, _signal_handler)
 
 
-class Client(EventEmitter):
+class Client():
     def __init__(self, reconnection=True, reconnection_attempts=0,
                  reconnection_delay=1, reconnection_delay_max=5,
-                 randomization_factor=0.5, binary=False):
-        EventEmitter.__init__(self)
+                 randomization_factor=0.5):
 
         self.reconnection = reconnection
         self.reconnection_attempts = reconnection_attempts
         self.reconnection_delay = reconnection_delay
         self.reconnection_delay_max = reconnection_delay_max
         self.randomization_factor = randomization_factor
-        self.binary = binary
 
         self.eio = Wsio()
         self.eio.on('connect', self._on_eio_connect)
@@ -57,18 +54,19 @@ class Client(EventEmitter):
     def connect(self, url, headers={}):
         self.connection_url = url
         self.connection_headers = headers
-        self.eio.connect(url, headers=headers)
-        self.connected = True
+        self.connected=self.eio.connect(url, headers=headers)
+        return self.connected
 
     def disconnect(self):
         self.reconnection = False
         self._reconnect_abort.set()
-
         for n in self.namespaces:
-          self._send_packet(_packet.Packet(_packet.DISCONNECT,namespace=n))
+            nsp = self.namespaces[n]
+            nsp.on_disconnect()
+            self._send_packet(_packet.Packet(_packet.DISCONNECT, namespace=n))
 
-        self.connected=False
-        self.eio.disconnect(abort=True)
+        self.connected = False
+        self.eio.disconnect()
 
     def of(self, name):
         if name in self.namespaces:
@@ -80,6 +78,7 @@ class Client(EventEmitter):
 
     def _send_packet(self, pkt):
         encoded_packet = pkt.encode()
+        print encoded_packet
         if isinstance(encoded_packet, list):
             for ep in encoded_packet:
                 print '_send_packet:', ep
@@ -101,7 +100,7 @@ class Client(EventEmitter):
                     self._do_ack(pkt.namespace, pkt.id, pkt.data)
         else:
             pkt = _packet.Packet(encoded_packet=data)
-            print 'type:', pkt.packet_type
+            # print 'type:', pkt.packet_type
             if pkt.packet_type == _packet.CONNECT:
                 self._do_connect(pkt.namespace)
             elif pkt.packet_type == _packet.DISCONNECT:
@@ -116,6 +115,7 @@ class Client(EventEmitter):
                 self._do_error(pkt.namespace, pkt.data)
 
     def _on_eio_disconnect(self):
+
         if self.connected:
             for n in self.namespaces:
                 nsp = self.namespaces[n]
@@ -124,17 +124,19 @@ class Client(EventEmitter):
             self.connected = False
 
         self._binary_packet = None
-        self.sid = NotImplemented
+        self.sid = None
 
-        if self.eio.state == 'connected' and self.reconnection:
+        if self.eio.state == 'connected' and self.reconnection and self._reconnect_task == None:
             self._reconnect_task = self.eio.start_background_task(
                 self._do_reconnect)
 
     def _on_eio_error(self, e):
-        if isinstance(e,ValueError) or isinstance(e,ConnectionError):
-          pass
+        if isinstance(e, ValueError) or isinstance(e, ConnectionError):
+            return
         else:
-          self._reconnect_task=None
+            self._reconnect_task = None
+
+        self._on_eio_disconnect()
 
     def _do_connect(self, namespace):
         namespace = namespace or '/'
@@ -206,8 +208,11 @@ class Client(EventEmitter):
                 break
 
             attempt_count += 1
-            self.connect(self.connection_url, self.connection_headers)
-            if self.reconnection_attempts and attempt_count>=self.reconnection_attempts:
-              break
+            if self.connect(self.connection_url, self.connection_headers):
+                break
 
+            if self.reconnection_attempts and attempt_count >= self.reconnection_attempts:
+                break
+        
         reconnecting_clients.remove(self)
+        self._reconnect_task = None

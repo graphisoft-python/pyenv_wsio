@@ -17,12 +17,14 @@ class ClientNamespace():
         self.callbacks = {0: itertools.count(1)}
 
     def on_connect(self):
-        self.connected = True
-        self.emitter.emit('connect', self)
+        if not self.connected:
+            self.connected = True
+            self.emitter.emit('connect', self)
 
     def on_disconnect(self):
-        self.connected = False
-        self.emitter.emit('disconnect', self)
+        if self.connected:
+            self.connected = False
+            self.emitter.emit('disconnect', self)
 
     def on_ack(self, id, data):
         callback = None
@@ -58,14 +60,16 @@ class ClientNamespace():
 
     def on(self, event, listener):
         self.emitter.on(event, listener)
+        return self
 
     def once(self, event, listener):
         self.emitter.once(event, listener)
+        return self
 
     def emit(self, event, *args, **kwargs):
 
         if not self.connected:
-            return
+            return self
 
         callback = kwargs.pop('callback', None)
         if callback is not None:
@@ -80,9 +84,12 @@ class ClientNamespace():
 
         self.conn._send_packet(_packet.Packet(
             _packet.EVENT, namespace=self.name, data=[event]+args, id=id))
+        
+        return self
 
     def send(self, *args, **kwargs):
         self.emit('message', *args, **kwargs)
+        return self
 
     def _generate_ack_id(self, callback):
         id = six.next(self.callbacks[0])

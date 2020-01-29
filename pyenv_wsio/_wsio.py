@@ -59,7 +59,7 @@ class Wsio(EventEmitter):
     def connect(self, url, headers={}):
         if(self.state != 'disconnected'):
             self.emit('error', ValueError('Client is not in a disconnected state'))
-            return
+            return False
 
         self.queue=self.create_queue()
 
@@ -67,7 +67,7 @@ class Wsio(EventEmitter):
             ws=websocket.create_connection(url, headers=headers)
         except (IOError, websocket.WebSocketException) as e:
             self.emit('error', e)
-            return
+            return False
 
         try:
             # handshake packet
@@ -76,12 +76,13 @@ class Wsio(EventEmitter):
         except Exception as e:
             self.emit('error', e)
             ws.close()
-            return
+            return False
 
         handshake_packet=_packet.Packet(encoded_packet=p)
 
         if handshake_packet.packet_type != _packet.HANDSHAKE:
             self.emit('error', ConnectionError('no OPEN packet'))
+            return False
 
         self.sid=handshake_packet.data[u'sid']
         self.ping_interval=handshake_packet.data[u'pingInterval']/1000.0
@@ -95,6 +96,7 @@ class Wsio(EventEmitter):
         self.ping_loop_task=self.start_background_task(self._ping_loop)
         self.write_loop_task=self.start_background_task(self._write_loop)
         self.read_loop_task=self.start_background_task(self._read_loop)
+        return True
 
     def send(self, data):
         if self.state != 'connected':
@@ -143,7 +145,7 @@ class Wsio(EventEmitter):
         else:
             self.ping_loop_event.clear()
 
-        while(self.state == 'connected'):
+        while(self.state == 'connected' and self.ws.connected):
             if not self.pong_received:
                 self.ws.close(timeout=0)
                 self.queue.put(None)
@@ -153,7 +155,7 @@ class Wsio(EventEmitter):
             self.ping_loop_event.wait(timeout=self.ping_interval)
 
     def _write_loop(self):
-        while self.state == 'connected':
+        while self.state == 'connected' and self.ws.connected:
             timeout=max(self.ping_interval, self.ping_timeout)+5
             packets=None
 
@@ -188,7 +190,7 @@ class Wsio(EventEmitter):
                 break
 
     def _read_loop(self):
-        while self.state == 'connected':
+        while self.state == 'connected' and self.ws.connected:
             opcode=None
             data=None
 
@@ -204,7 +206,8 @@ class Wsio(EventEmitter):
 
             if six.PY3 and opcode == OPCODE_TEXT:
                 data=data.decode("utf-8")
-
+            
+            # print 'recv:',data
             if opcode in (OPCODE_BINARY, OPCODE_TEXT):
                 self.emit('message', data)
             elif opcode == OPCODE_PONG:
