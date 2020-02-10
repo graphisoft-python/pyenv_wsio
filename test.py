@@ -7,9 +7,9 @@ ws = pyenv_wsio.Client()
 
 def namespaceConnect(nsp):
     print 'namespace connect', nsp.name
-    # nsp.send(123456,'sendString')
-    # nsp.emit('aaaaaa', {'pop': 0000}, callback=emitAck)
-    # nsp.emit('bbbbbb',678967)
+    nsp.send(123456,'sendString')
+    nsp.emit('aaaaaa', {'pop': 0000}, callback=emitAck)
+    nsp.emit('bbbbbb',678967)
 
 def namespaceDisconnect(nsp):
     print 'namespace disconnect',nsp.name
