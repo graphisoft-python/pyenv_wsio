@@ -126,7 +126,8 @@ class Wsio(EventEmitter):
             self.ws.close()
 
             if not abort:
-                self.read_loop_task.join()
+                if self.read_loop_task:
+                    self.read_loop_task.join()
 
             self.state='disconnected'
 
