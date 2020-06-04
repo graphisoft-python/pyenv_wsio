@@ -56,7 +56,7 @@ class Wsio(EventEmitter):
         self.sid = None
         self.state = 'disconnected'
 
-    def connect(self, url, headers={}):
+    def connect(self, url, header={}):
         if(self.state != 'disconnected'):
             self.emit('error', ValueError('Client is not in a disconnected state'))
             return False
@@ -64,7 +64,7 @@ class Wsio(EventEmitter):
         self.queue=self.create_queue()
 
         try:
-            ws=websocket.create_connection(url, headers=headers)
+            ws=websocket.create_connection(url, header=header)
         except (IOError, websocket.WebSocketException) as e:
             self.emit('error', e)
             return False

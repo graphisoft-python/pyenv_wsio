@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyenv_wsio",
-    version="0.0.3",
+    version="0.0.4",
     author="beanjs",
     author_email="502554248@qq.com",
     description="VirtualPyEnv websocket library",

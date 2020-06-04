@@ -42,7 +42,7 @@ class Client():
         self.eio.on('error', self._on_eio_error)
 
         self.connection_url = None
-        self.connection_headers = None
+        self.connection_header = None
         self.sid = None
 
         self.connected = False
@@ -51,10 +51,10 @@ class Client():
         self._reconnect_task = None
         self._reconnect_abort = self.eio.create_event()
 
-    def connect(self, url, headers={}):
+    def connect(self, url, header={}):
         self.connection_url = url
-        self.connection_headers = headers
-        self.connected=self.eio.connect(url, headers=headers)
+        self.connection_header = header
+        self.connected=self.eio.connect(url, header=header)
         return self.connected
 
     def disconnect(self):
@@ -78,10 +78,10 @@ class Client():
 
     def _send_packet(self, pkt):
         encoded_packet = pkt.encode()
-        print encoded_packet
+        # print encoded_packet
         if isinstance(encoded_packet, list):
             for ep in encoded_packet:
-                print '_send_packet:', ep
+                # print '_send_packet:', ep
                 self.eio.send(ep)
         else:
             self.eio.send(encoded_packet)
@@ -208,7 +208,7 @@ class Client():
                 break
 
             attempt_count += 1
-            if self.connect(self.connection_url, self.connection_headers):
+            if self.connect(self.connection_url, self.connection_header):
                 break
 
             if self.reconnection_attempts and attempt_count >= self.reconnection_attempts:

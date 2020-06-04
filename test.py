@@ -42,7 +42,7 @@ rootNsp.on('disconnect',namespaceDisconnect)
 
 ws.of('/admin').on('connect', namespaceConnect).on('disconnect',namespaceDisconnect)
 
-ws.connect('ws://localhost:12000/admin', headers=["userid:from_python"])
+ws.connect('ws://localhost:12000/admin', header={"userid":"from_python"})
 
 # rootNsp.emit('aaaaaa', 'abc', 456, {'pop': 0000}, callback=emitAck)
 # rootNsp.emit('aaaaaa', 'abc', callback=emitAck)
