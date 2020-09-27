@@ -54,7 +54,7 @@ class Client():
     def connect(self, url, header={}):
         self.connection_url = url
         self.connection_header = header
-        self.connected=self.eio.connect(url, header=header)
+        self.connected = self.eio.connect(url, header=header)
         return self.connected
 
     def disconnect(self):
@@ -75,6 +75,12 @@ class Client():
             namespace = _namespace.ClientNamespace(name, self)
             self.namespaces[name] = namespace
         return namespace
+
+    def connectNamespace(self, nsp):
+        if not nsp.connected:
+            self._send_packet(_packet.Packet(
+                _packet.CONNECT, namespace=nsp.name))
+        pass
 
     def _send_packet(self, pkt):
         encoded_packet = pkt.encode()
@@ -115,7 +121,6 @@ class Client():
                 self._do_error(pkt.namespace, pkt.data)
 
     def _on_eio_disconnect(self):
-
         if self.connected:
             for n in self.namespaces:
                 nsp = self.namespaces[n]
@@ -147,9 +152,8 @@ class Client():
         if namespace == '/':
             for n in self.namespaces:
                 nsp = self.namespaces[n]
-                if n != '/' and nsp.connected == False:
-                    self._send_packet(_packet.Packet(
-                        _packet.CONNECT, namespace=n))
+                if n != '/':
+                    self.connectNamespace(nsp)
 
     def _do_disconnect(self, namespace):
         if not self.connected:
@@ -213,6 +217,6 @@ class Client():
 
             if self.reconnection_attempts and attempt_count >= self.reconnection_attempts:
                 break
-        
+
         reconnecting_clients.remove(self)
         self._reconnect_task = None
