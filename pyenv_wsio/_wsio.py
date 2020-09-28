@@ -87,7 +87,8 @@ class Wsio(EventEmitter):
         self.sid=handshake_packet.data[u'sid']
         self.ping_interval=handshake_packet.data[u'pingInterval']/1000.0
         self.ping_timeout=handshake_packet.data[u'pingTimeout']/1000.0
-
+        # print 'ping_interval:'+str(self.ping_interval)
+        # print 'ping_timeout:'+str(self.ping_timeout)
         self.state='connected'
         connected_clients.append(self)
         self.emit('connect')
@@ -163,7 +164,7 @@ class Wsio(EventEmitter):
             try:
                 packets=[self.queue.get(timeout=timeout)]
             except self.queue.Empty:
-                break
+                continue
 
             if packets == [None]:
                 self.queue.task_done()

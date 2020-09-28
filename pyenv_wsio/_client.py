@@ -149,11 +149,11 @@ class Client():
             nsp = self.namespaces[namespace]
             nsp.on_connect()
 
-        if namespace == '/':
-            for n in self.namespaces:
-                nsp = self.namespaces[n]
-                if n != '/':
-                    self.connectNamespace(nsp)
+        # if namespace == '/':
+        #     for n in self.namespaces:
+        #         nsp = self.namespaces[n]
+        #         if n != '/':
+        #             self.connectNamespace(nsp)
 
     def _do_disconnect(self, namespace):
         if not self.connected:
